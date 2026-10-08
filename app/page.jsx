@@ -318,6 +318,26 @@ export default function Home() {
     }));
   };
 
+  // Manually Add a New Record
+  const handleAddNewRecord = () => {
+    const targetCat = activeCategory === 'ALL' ? 'FAMILY' : activeCategory;
+    const newRec = {
+      id: `rec_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      rowNumber: records.length + 1,
+      name: 'NEW PERSON',
+      category: targetCat,
+      photoFileName: '',
+      isFound: false,
+      photoItem: null,
+      config: { ...DEFAULT_CONFIG }
+    };
+    setRecords(prev => [...prev, newRec]);
+    setTimeout(() => {
+      const catRecs = [...records, newRec].filter(r => activeCategory === 'ALL' || r.category === targetCat);
+      setCurrentPreviewIndex(Math.max(0, catRecs.length - 1));
+    }, 50);
+  };
+
   // Searchable Photo Picker Controls
   const openPicker = (recId, triggerEl) => {
     const rect = triggerEl.getBoundingClientRect();
@@ -420,13 +440,13 @@ export default function Home() {
   // Generate Multi-Page PDF
   const handleGeneratePdf = async () => {
     if (categoryRecords.length === 0) {
-      alert('Koi record nahi hai generate karne ke liye!');
+      alert('No records available to generate!');
       return;
     }
 
     const missingCount = categoryRecords.filter(r => !r.isFound).length;
     if (missingCount > 0) {
-      const proceed = confirm(`${missingCount} records me photo missing hai.\n\nKya aap fir bhi PDF generate karna chahte hain?`);
+      const proceed = confirm(`${missingCount} records are missing photos.\n\nDo you still want to generate the PDF?`);
       if (!proceed) return;
     }
 
@@ -507,7 +527,7 @@ export default function Home() {
           <div className="flex items-center space-x-2">
             <button
               onClick={() => {
-                if (confirm('Kya aap category ka saara data reset karna chahte hain?')) {
+                if (confirm('Are you sure you want to reset all data for this category?')) {
                   setRecords([]);
                   setPhotosMap(new Map());
                   setAvailablePhotosList([]);
@@ -664,6 +684,16 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={handleAddNewRecord}
+                    className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-bold text-xs flex items-center space-x-1.5 shadow-md transition cursor-pointer active:scale-95 shrink-0"
+                    title="Manually add new record"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    <span>+ Add Record</span>
+                  </button>
+
                   <div className="relative">
                     <Search className="w-3.5 h-3.5 text-amber-400/60 absolute left-2.5 top-2" />
                     <input 
@@ -703,8 +733,16 @@ export default function Home() {
                   <tbody className="divide-y divide-amber-950/40">
                     {filteredRecords.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="p-8 text-center text-amber-200/50">
-                          Koi record nahi mila. Upar se WhatsApp chat upload karein ya naya record add karein!
+                        <td colSpan={6} className="p-8 text-center text-amber-200/60">
+                          <p className="mb-3 text-xs">No records found. Upload WhatsApp chat above or add a record manually!</p>
+                          <button
+                            type="button"
+                            onClick={handleAddNewRecord}
+                            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-bold text-xs shadow-lg transition cursor-pointer active:scale-95"
+                          >
+                            <PlusCircle className="w-4 h-4" />
+                            <span>+ Add Record Manually</span>
+                          </button>
                         </td>
                       </tr>
                     ) : (
@@ -726,9 +764,18 @@ export default function Home() {
                             />
                           </td>
                           <td className="p-2.5">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#992A20]/40 text-amber-200 border border-amber-600/30">
-                              {rec.category}
-                            </span>
+                            <select
+                              value={rec.category || activeCategory || 'FAMILY'}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setRecords(prev => prev.map(r => r.id === rec.id ? { ...r, category: val } : r));
+                              }}
+                              className="bg-[#1C0E0E] border border-amber-800/60 rounded px-1.5 py-0.5 text-[10px] font-bold text-amber-200 outline-none cursor-pointer hover:border-amber-500"
+                            >
+                              {categories.filter(c => c !== 'ALL').map(c => (
+                                <option key={c} value={c}>{c}</option>
+                              ))}
+                            </select>
                           </td>
                           <td className="p-2.5">
                             <div className="flex items-center space-x-1.5">
@@ -867,7 +914,7 @@ export default function Home() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-amber-300 flex items-center space-x-1.5">
                       <ImageIcon className="w-4 h-4 text-amber-400" />
-                      <span>Yaha Se Photo Set Karein:</span>
+                      <span>Set Photo Source:</span>
                     </span>
                     <span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${
                       selectedRecord?.isFound 
@@ -919,7 +966,7 @@ export default function Home() {
                       <span>Photo Fit Mode:</span>
                     </span>
                     <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950/90 text-emerald-300 font-semibold border border-emerald-600/40">
-                      {selectedEffectiveConfig.photoPosition === 'contain' ? 'Pura Photo (No Cut)' : 'Smart Center'}
+                      {selectedEffectiveConfig.photoPosition === 'contain' ? 'Full Photo (No Cut)' : 'Smart Center'}
                     </span>
                   </div>
 
@@ -933,7 +980,7 @@ export default function Home() {
                           : 'bg-[#251212] border-amber-700/50 text-amber-200 hover:border-emerald-500'
                       }`}
                     >
-                      <span>🖼️ Pura Photo (100% No Cut)</span>
+                      <span>🖼️ Full Photo (100% No Cut)</span>
                     </button>
                     <button 
                       type="button" 
@@ -968,17 +1015,17 @@ export default function Home() {
                       type="button" 
                       onClick={() => adjustPhotoShiftY(-25, false)}
                       className="py-1.5 px-1 bg-[#281414] hover:bg-amber-800/40 border border-amber-600/50 rounded-lg text-amber-200 text-[11px] font-bold"
-                      title="Photo ko upar karein (Chin dikhane ke liye)"
+                      title="Move photo up"
                     >
-                      ⬆️ Upar
+                      ⬆️ Move Up
                     </button>
                     <button 
                       type="button" 
                       onClick={() => adjustPhotoShiftY(25, false)}
                       className="py-1.5 px-1 bg-[#281414] hover:bg-amber-800/40 border border-amber-600/50 rounded-lg text-amber-200 text-[11px] font-bold"
-                      title="Photo ko neeche karein"
+                      title="Move photo down"
                     >
-                      ⬇️ Neeche
+                      ⬇️ Move Down
                     </button>
                     <button 
                       type="button" 
@@ -1193,7 +1240,7 @@ export default function Home() {
                 type="text" 
                 value={pickerState.query}
                 onChange={(e) => setPickerState(prev => ({ ...prev, query: e.target.value }))}
-                placeholder="Filename ya number search karein (e.g. 3685)..." 
+                placeholder="Search filename or number (e.g. 3685)..." 
                 className="w-full bg-[#0E0606] text-amber-100 placeholder-amber-400/40 border border-amber-700/60 focus:border-amber-400 focus:ring-1 focus:ring-amber-500 rounded-lg pl-8 pr-7 py-2 text-xs outline-none font-mono font-medium shadow-inner" 
               />
               {pickerState.query && (

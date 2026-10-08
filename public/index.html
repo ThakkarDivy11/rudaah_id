@@ -331,7 +331,7 @@
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-amber-300 flex items-center space-x-1.5">
                   <i data-lucide="image-plus" class="w-4 h-4 text-amber-400"></i>
-                  <span>Yaha Se Photo Set Karein:</span>
+                  <span>Set Photo Source:</span>
                 </span>
                 <span id="previewPhotoStatusBadge" class="text-[10px] px-2 py-0.5 rounded font-semibold bg-emerald-950 text-emerald-300 border border-emerald-500/40">
                   ✓ Photo Active
@@ -365,13 +365,13 @@
                   <span>Photo Fit (Face & Chin Protection):</span>
                 </span>
                 <span id="currentFitBadge" class="text-[10px] px-2 py-0.5 rounded bg-emerald-950/90 text-emerald-300 font-semibold border border-emerald-600/40">
-                  Pura Photo (No Cut)
+                  Full Photo (No Cut)
                 </span>
               </div>
 
               <div class="grid grid-cols-2 gap-2">
                 <button type="button" onclick="setPhotoFitMode('contain')" id="btnFitContain" class="py-1.5 px-2 bg-[#251212] hover:bg-emerald-950/80 border border-amber-700/50 hover:border-emerald-500 rounded-lg text-amber-200 text-[11px] font-bold flex items-center justify-center space-x-1 transition cursor-pointer shadow">
-                  <span>🖼️ Pura Photo (100% No Cut)</span>
+                  <span>🖼️ Full Photo (100% No Cut)</span>
                 </button>
                 <button type="button" onclick="setPhotoFitMode('attention')" id="btnFitAttention" class="py-1.5 px-2 bg-[#251212] hover:bg-amber-950/80 border border-amber-700/50 hover:border-amber-400 rounded-lg text-amber-200 text-[11px] font-bold flex items-center justify-center space-x-1 transition cursor-pointer shadow">
                   <span>🎯 Smart Face Center</span>
@@ -394,11 +394,11 @@
 
               <!-- Quick Nudge Buttons -->
               <div class="grid grid-cols-4 gap-1.5">
-                <button type="button" onclick="adjustPhotoShiftY(-25)" class="py-1.5 px-1 bg-[#281414] hover:bg-amber-800/40 border border-amber-600/50 rounded-lg text-amber-200 text-[11px] font-bold flex items-center justify-center space-x-1 transition shadow cursor-pointer" title="Photo ko upar karein (Chin dikhane ke liye)">
-                  <span>⬆️ Upar</span>
+                <button type="button" onclick="adjustPhotoShiftY(-25)" class="py-1.5 px-1 bg-[#281414] hover:bg-amber-800/40 border border-amber-600/50 rounded-lg text-amber-200 text-[11px] font-bold flex items-center justify-center space-x-1 transition shadow cursor-pointer" title="Move photo up">
+                  <span>⬆️ Move Up</span>
                 </button>
-                <button type="button" onclick="adjustPhotoShiftY(25)" class="py-1.5 px-1 bg-[#281414] hover:bg-amber-800/40 border border-amber-600/50 rounded-lg text-amber-200 text-[11px] font-bold flex items-center justify-center space-x-1 transition shadow cursor-pointer" title="Photo ko neeche karein (Head/Hair dikhane ke liye)">
-                  <span>⬇️ Neeche</span>
+                <button type="button" onclick="adjustPhotoShiftY(25)" class="py-1.5 px-1 bg-[#281414] hover:bg-amber-800/40 border border-amber-600/50 rounded-lg text-amber-200 text-[11px] font-bold flex items-center justify-center space-x-1 transition shadow cursor-pointer" title="Move photo down">
+                  <span>⬇️ Move Down</span>
                 </button>
                 <button type="button" onclick="adjustPhotoZoom(10)" class="py-1.5 px-1 bg-[#281414] hover:bg-amber-800/40 border border-amber-600/50 rounded-lg text-amber-200 text-[11px] font-bold flex items-center justify-center space-x-1 transition shadow cursor-pointer" title="Zoom In">
                   <span>🔍 Zoom +</span>
@@ -412,7 +412,7 @@
               <div class="grid grid-cols-2 gap-2 pt-1 text-[11px]">
                 <div>
                   <div class="flex justify-between text-amber-200/80 mb-0.5">
-                    <span>Shift Upar/Neeche:</span>
+                    <span>Shift Vertical:</span>
                     <strong id="previewShiftYVal" class="text-amber-400 font-mono">0px</strong>
                   </div>
                   <input type="range" id="sliderPhotoShiftY" min="-120" max="120" value="0" step="5" oninput="onSliderShiftChange(this.value)" class="w-full accent-amber-500 cursor-pointer">

@@ -967,10 +967,14 @@ app.post('/api/load-chat-demo', (req, res) => {
 // Default clean start - no automatic demo data injection
 console.log('Clean workspace ready: no demo or cached data autoloaded.');
 
-app.listen(PORT, () => {
-  console.log(`\n======================================================`);
-  console.log(` RUDAAH GARBA ID CARD GENERATOR IS RUNNING!`);
-  console.log(` Category-Wise Studio + WhatsApp Chat Parser Active!`);
-  console.log(` Open URL in your browser: http://localhost:${PORT}`);
-  console.log(`======================================================\n`);
-});
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`\n======================================================`);
+    console.log(` RUDAAH GARBA ID CARD GENERATOR IS RUNNING!`);
+    console.log(` Category-Wise Studio + WhatsApp Chat Parser Active!`);
+    console.log(` Open URL in your browser: http://localhost:${PORT}`);
+    console.log(`======================================================\n`);
+  });
+}
+
+module.exports = app;

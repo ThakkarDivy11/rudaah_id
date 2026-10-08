@@ -88,7 +88,7 @@ export default function Home() {
   const fileInputTemplateRef = useRef(null);
   const singlePhotoFileInputRef = useRef(null);
 
-  // Current category config
+  // Current category config (global for template position/size)
   const currentConfig = useMemo(() => {
     return categoryConfigs.get(activeCategory) || { ...DEFAULT_CONFIG };
   }, [categoryConfigs, activeCategory]);
@@ -100,6 +100,7 @@ export default function Home() {
       return next;
     });
   };
+
 
   // Revalidate records matching against photosMap
   const validateRecord = (rec, pMap) => {
@@ -156,6 +157,26 @@ export default function Home() {
     if (categoryRecords.length === 0) return null;
     return categoryRecords[currentPreviewIndex % categoryRecords.length] || categoryRecords[0];
   }, [categoryRecords, currentPreviewIndex]);
+
+  // Effective config for the SELECTED record (personal overrides category defaults)
+  // This merges category config + record's personal config
+  const selectedEffectiveConfig = useMemo(() => {
+    const base = categoryConfigs.get(activeCategory) || { ...DEFAULT_CONFIG };
+    if (!selectedRecord?.config) return base;
+    return { ...base, ...selectedRecord.config };
+  }, [categoryConfigs, activeCategory, selectedRecord]);
+
+  // Update only the selected record's personal config (not global)
+  const updateSelectedRecordConfig = (newConfig) => {
+    if (!selectedRecord) return;
+    setRecords(prev => prev.map(r => {
+      if (r.id === selectedRecord.id) {
+        const cfg = r.config || {};
+        return { ...r, config: { ...cfg, ...newConfig } };
+      }
+      return r;
+    }));
+  };
 
   // Render live preview card whenever selected record or config changes
   useEffect(() => {
@@ -898,16 +919,16 @@ export default function Home() {
                       <span>Photo Fit Mode:</span>
                     </span>
                     <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950/90 text-emerald-300 font-semibold border border-emerald-600/40">
-                      {currentConfig.photoPosition === 'contain' ? 'Pura Photo (No Cut)' : 'Smart Center'}
+                      {selectedEffectiveConfig.photoPosition === 'contain' ? 'Pura Photo (No Cut)' : 'Smart Center'}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <button 
                       type="button" 
-                      onClick={() => setPhotoFitMode('contain', true)}
+                      onClick={() => setPhotoFitMode('contain', false)}
                       className={`py-1.5 px-2 rounded-lg text-[11px] font-bold flex items-center justify-center space-x-1 transition cursor-pointer shadow border ${
-                        currentConfig.photoPosition === 'contain' 
+                        selectedEffectiveConfig.photoPosition === 'contain' 
                           ? 'bg-emerald-950 border-emerald-400 text-emerald-200' 
                           : 'bg-[#251212] border-amber-700/50 text-amber-200 hover:border-emerald-500'
                       }`}
@@ -916,9 +937,9 @@ export default function Home() {
                     </button>
                     <button 
                       type="button" 
-                      onClick={() => setPhotoFitMode('cover', true)}
+                      onClick={() => setPhotoFitMode('cover', false)}
                       className={`py-1.5 px-2 rounded-lg text-[11px] font-bold flex items-center justify-center space-x-1 transition cursor-pointer shadow border ${
-                        currentConfig.photoPosition === 'cover' 
+                        selectedEffectiveConfig.photoPosition === 'cover' 
                           ? 'bg-amber-950 border-amber-400 text-amber-200' 
                           : 'bg-[#251212] border-amber-700/50 text-amber-200 hover:border-amber-400'
                       }`}
@@ -934,7 +955,7 @@ export default function Home() {
                     <span className="text-xs font-bold text-amber-300">Nudge & Zoom:</span>
                     <button 
                       type="button" 
-                      onClick={() => updateCurrentConfig({ photoShiftY: 0, photoZoom: 100, photoPosition: 'contain' })}
+                      onClick={() => updateSelectedRecordConfig({ photoShiftY: 0, photoShiftX: 0, photoZoom: 100, photoPosition: 'contain' })}
                       className="px-2 py-0.5 rounded bg-[#221010] hover:bg-rose-900/50 text-amber-300 text-[10px] font-bold border border-amber-900/50 flex items-center space-x-1"
                     >
                       <RotateCcw className="w-3 h-3" />
@@ -945,7 +966,7 @@ export default function Home() {
                   <div className="grid grid-cols-4 gap-1.5">
                     <button 
                       type="button" 
-                      onClick={() => adjustPhotoShiftY(-25, true)}
+                      onClick={() => adjustPhotoShiftY(-25, false)}
                       className="py-1.5 px-1 bg-[#281414] hover:bg-amber-800/40 border border-amber-600/50 rounded-lg text-amber-200 text-[11px] font-bold"
                       title="Photo ko upar karein (Chin dikhane ke liye)"
                     >
@@ -953,7 +974,7 @@ export default function Home() {
                     </button>
                     <button 
                       type="button" 
-                      onClick={() => adjustPhotoShiftY(25, true)}
+                      onClick={() => adjustPhotoShiftY(25, false)}
                       className="py-1.5 px-1 bg-[#281414] hover:bg-amber-800/40 border border-amber-600/50 rounded-lg text-amber-200 text-[11px] font-bold"
                       title="Photo ko neeche karein"
                     >
@@ -961,7 +982,7 @@ export default function Home() {
                     </button>
                     <button 
                       type="button" 
-                      onClick={() => adjustPhotoZoom(10, true)}
+                      onClick={() => adjustPhotoZoom(10, false)}
                       className="py-1.5 px-1 bg-[#281414] hover:bg-amber-800/40 border border-amber-600/50 rounded-lg text-amber-200 text-[11px] font-bold"
                       title="Zoom In"
                     >
@@ -969,7 +990,7 @@ export default function Home() {
                     </button>
                     <button 
                       type="button" 
-                      onClick={() => adjustPhotoZoom(-10, true)}
+                      onClick={() => adjustPhotoZoom(-10, false)}
                       className="py-1.5 px-1 bg-[#281414] hover:bg-amber-800/40 border border-amber-600/50 rounded-lg text-amber-200 text-[11px] font-bold"
                       title="Zoom Out"
                     >
@@ -977,35 +998,35 @@ export default function Home() {
                     </button>
                   </div>
 
-                  {/* Real-time Sliders */}
+                  {/* Real-time Sliders (per-record) */}
                   <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
                     <div>
                       <div className="flex justify-between text-amber-200/80 mb-0.5">
                         <span>Shift:</span>
-                        <strong className="text-amber-400 font-mono">{currentConfig.photoShiftY || 0}px</strong>
+                        <strong className="text-amber-400 font-mono">{selectedEffectiveConfig.photoShiftY || 0}px</strong>
                       </div>
                       <input 
                         type="range" 
                         min="-120" 
                         max="120" 
                         step="5"
-                        value={currentConfig.photoShiftY || 0}
-                        onChange={(e) => updateCurrentConfig({ photoShiftY: parseInt(e.target.value) })}
+                        value={selectedEffectiveConfig.photoShiftY || 0}
+                        onChange={(e) => updateSelectedRecordConfig({ photoShiftY: parseInt(e.target.value) })}
                         className="w-full accent-amber-500 cursor-pointer" 
                       />
                     </div>
                     <div>
                       <div className="flex justify-between text-amber-200/80 mb-0.5">
                         <span>Zoom:</span>
-                        <strong className="text-amber-400 font-mono">{currentConfig.photoZoom || 100}%</strong>
+                        <strong className="text-amber-400 font-mono">{selectedEffectiveConfig.photoZoom || 100}%</strong>
                       </div>
                       <input 
                         type="range" 
                         min="60" 
                         max="180" 
                         step="5"
-                        value={currentConfig.photoZoom || 100}
-                        onChange={(e) => updateCurrentConfig({ photoZoom: parseInt(e.target.value) })}
+                        value={selectedEffectiveConfig.photoZoom || 100}
+                        onChange={(e) => updateSelectedRecordConfig({ photoZoom: parseInt(e.target.value) })}
                         className="w-full accent-amber-500 cursor-pointer" 
                       />
                     </div>

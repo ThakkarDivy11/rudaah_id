@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+body {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #0D0909;
+  color: #F8F5EE;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.font-cinzel { font-family: 'Cinzel', serif; }
+.font-poppins { font-family: 'Poppins', sans-serif; }
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #FFF3BF 0%, #E6B800 50%, #B8860B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.maroon-card {
+  background: linear-gradient(180deg, rgba(38, 22, 22, 0.90) 0%, rgba(22, 12, 12, 0.96) 100%);
+  border: 1px solid rgba(230, 184, 0, 0.18);
+  backdrop-filter: blur(12px);
+}
+
+.maroon-glow-border {
+  box-shadow: 0 0 25px rgba(153, 42, 32, 0.4);
+}
+
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #992A20;
+  border-radius: 9999px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}

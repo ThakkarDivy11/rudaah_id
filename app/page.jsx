@@ -221,7 +221,8 @@ export default function Home() {
     });
 
     setCurrentPreviewIndex(0);
-    alert(`Successfully parsed ${parsed.length} name and photo records from chat!`);
+    if (fileInputChatRef.current) fileInputChatRef.current.value = '';
+    alert(`Successfully extracted ${parsed.length} person names from chat file!`);
   };
 
   // Handle Photos ZIP Upload (Client-Side JSZip)

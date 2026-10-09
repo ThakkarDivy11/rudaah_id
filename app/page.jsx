@@ -8,7 +8,7 @@ import {
   ChevronDown, Sliders, RotateCcw, FileDown, CheckCircle, 
   AlertTriangle, PlusCircle, X, Image as ImageIcon, MessageSquare
 } from 'lucide-react';
-import { parseWhatsAppChat, getBasePhotoKeys, matchPhotoInCollection } from '../lib/parser';
+import { parseWhatsAppChat, getBasePhotoKeys, matchPhotoInCollection, convertBlobIfHeic } from '../lib/parser';
 import { renderCardOnCanvas, generateCardsPdf } from '../lib/cardRenderer';
 
 const DEFAULT_CATEGORIES = [
@@ -225,7 +225,7 @@ export default function Home() {
     alert(`Successfully extracted ${parsed.length} person names from chat file!`);
   };
 
-  // Handle Photos ZIP Upload (Client-Side JSZip)
+  // Handle Photos ZIP Upload (Client-Side JSZip with HEIC auto-conversion)
   const handleZipUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -240,12 +240,20 @@ export default function Home() {
       let count = 0;
       for (const relativePath of entries) {
         const fileData = await zip.files[relativePath].async('blob');
-        const fileName = relativePath.split('/').pop();
-        const url = URL.createObjectURL(fileData);
-        const item = { fileName, url, blob: fileData };
+        const rawFileName = relativePath.split('/').pop();
         
-        uniqueNames.add(fileName);
-        const keys = getBasePhotoKeys(fileName);
+        // Auto-convert HEIC/HEIF to JPEG for browser canvas & preview rendering
+        const { blob: convertedBlob, fileName: finalFileName } = await convertBlobIfHeic(fileData, rawFileName);
+        const url = URL.createObjectURL(convertedBlob);
+        const item = { fileName: rawFileName, convertedFileName: finalFileName, url, blob: convertedBlob };
+        
+        uniqueNames.add(rawFileName);
+        if (finalFileName !== rawFileName) uniqueNames.add(finalFileName);
+
+        const keys = new Set([
+          ...getBasePhotoKeys(rawFileName),
+          ...getBasePhotoKeys(finalFileName)
+        ]);
         for (const k of keys) {
           newMap.set(k, item);
         }
@@ -255,68 +263,87 @@ export default function Home() {
           current: count, 
           total: entries.length, 
           percent: Math.round((count / entries.length) * 100), 
-          message: `Loaded ${count} / ${entries.length} photos...` 
+          message: `Processing photo ${count} / ${entries.length} (${rawFileName})...` 
         });
       }
 
       setPhotosMap(newMap);
       setAvailablePhotosList(Array.from(uniqueNames));
       setProgress({ active: false, current: 0, total: 0, percent: 0, message: '' });
-      alert(`Loaded ${count} photos directly into browser studio!`);
+      alert(`Loaded ${count} photos (including HEIC) directly into browser studio!`);
     } catch (err) {
       alert('Error extracting ZIP: ' + err.message);
       setProgress({ active: false, current: 0, total: 0, percent: 0, message: '' });
     }
   };
 
-  // Handle Custom Design Template Upload
-  const handleTemplateUpload = (e) => {
+  // Handle Custom Design Template Upload (supports HEIC, PNG, JPG, WebP)
+  const handleTemplateUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.src = url;
-    img.onload = () => {
-      setTemplateImgs(prev => {
-        const next = new Map(prev);
-        next.set(activeCategory, img);
-        return next;
-      });
-      setTemplateNames(prev => {
-        const next = new Map(prev);
-        next.set(activeCategory, file.name);
-        return next;
-      });
-      alert(`Custom template uploaded for category: ${activeCategory}!`);
-    };
+    try {
+      const { blob: convertedBlob, fileName: finalFileName } = await convertBlobIfHeic(file, file.name);
+      const url = URL.createObjectURL(convertedBlob);
+      const img = new Image();
+      img.src = url;
+      img.onload = () => {
+        setTemplateImgs(prev => {
+          const next = new Map(prev);
+          next.set(activeCategory, img);
+          return next;
+        });
+        setTemplateNames(prev => {
+          const next = new Map(prev);
+          next.set(activeCategory, file.name);
+          return next;
+        });
+        alert(`Custom template uploaded for category: ${activeCategory}!`);
+      };
+      img.onerror = () => {
+        alert('Failed to load template image. Please ensure it is a valid PNG, JPG, or HEIC image.');
+      };
+    } catch (err) {
+      alert('Template upload error: ' + err.message);
+    }
   };
 
-  // Handle Single Photo Upload for a specific record
-  const handleSinglePhotoUpload = (recId, file) => {
+  // Handle Single Photo Upload for a specific record (supports HEIC, PNG, JPG, WebP)
+  const handleSinglePhotoUpload = async (recId, file) => {
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    const item = { fileName: file.name, url, blob: file };
+    try {
+      const { blob: convertedBlob, fileName: finalFileName } = await convertBlobIfHeic(file, file.name);
+      const url = URL.createObjectURL(convertedBlob);
+      const item = { fileName: file.name, convertedFileName: finalFileName, url, blob: convertedBlob };
 
-    setPhotosMap(prev => {
-      const next = new Map(prev);
-      const keys = getBasePhotoKeys(file.name);
-      for (const k of keys) {
-        next.set(k, item);
-      }
-      return next;
-    });
+      setPhotosMap(prev => {
+        const next = new Map(prev);
+        const keys = new Set([
+          ...getBasePhotoKeys(file.name),
+          ...getBasePhotoKeys(finalFileName)
+        ]);
+        for (const k of keys) {
+          next.set(k, item);
+        }
+        return next;
+      });
 
-    setAvailablePhotosList(prev => {
-      if (!prev.includes(file.name)) return [...prev, file.name];
-      return prev;
-    });
+      setAvailablePhotosList(prev => {
+        const next = [...prev];
+        if (!next.includes(file.name)) next.push(file.name);
+        if (finalFileName !== file.name && !next.includes(finalFileName)) next.push(finalFileName);
+        return next;
+      });
 
-    setRecords(prev => prev.map(r => {
-      if (r.id === recId) {
-        return { ...r, photoFileName: file.name, isFound: true, photoItem: item };
-      }
-      return r;
-    }));
+      setRecords(prev => prev.map(r => {
+        if (r.id === recId) {
+          return { ...r, photoFileName: file.name, isFound: true, photoItem: item };
+        }
+        return r;
+      }));
+    } catch (err) {
+      console.error('Error uploading photo:', err);
+      alert('Error uploading photo: ' + err.message);
+    }
   };
 
   // Manually Add a New Record
@@ -665,7 +692,7 @@ export default function Home() {
                 <input 
                   type="file" 
                   ref={fileInputTemplateRef} 
-                  accept="image/*" 
+                  accept="image/*,.heic,.heif,.HEIC,.HEIF" 
                   className="hidden" 
                   onChange={handleTemplateUpload} 
                 />
@@ -812,7 +839,7 @@ export default function Home() {
                                 <Camera className="w-3.5 h-3.5 text-amber-300" />
                                 <input 
                                   type="file" 
-                                  accept="image/*" 
+                                  accept="image/*,.heic,.heif,.HEIC,.HEIF" 
                                   className="hidden" 
                                   onChange={(e) => handleSinglePhotoUpload(rec.id, e.target.files?.[0])}
                                 />
@@ -934,7 +961,7 @@ export default function Home() {
                       <input 
                         type="file" 
                         ref={singlePhotoFileInputRef}
-                        accept="image/*" 
+                        accept="image/*,.heic,.heif,.HEIC,.HEIF" 
                         className="hidden" 
                         onChange={(e) => {
                           if (selectedRecord) handleSinglePhotoUpload(selectedRecord.id, e.target.files?.[0]);

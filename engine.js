@@ -701,6 +701,7 @@ function extractZipPhotos(zipBuffer) {
 
 module.exports = {
   processPhoto,
+  ensureStandardImageBuffer,
   generateCardImage,
   generateCardsPdf,
   generateExcelWithPhotos,

@@ -433,8 +433,8 @@ app.post('/api/upload-template', upload.single('templateFile'), async (req, res)
       execSync(`python -c "import pdfplumber; pdf = pdfplumber.open('${tempPdfPath.replace(/\\/g, '/')}'); pdf.pages[0].to_image(resolution=300).original.save('${tempPngPath.replace(/\\/g, '/')}')"`);
       rawBuffer = fs.readFileSync(tempPngPath);
     } else {
-      // It's image (PNG / JPG)
-      rawBuffer = req.file.buffer;
+      // It's image (PNG / JPG / HEIC / WEBP)
+      rawBuffer = await engine.ensureStandardImageBuffer(req.file.buffer);
     }
 
     // Auto-clean any placeholder name with matching card cream background

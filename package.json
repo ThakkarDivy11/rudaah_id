@@ -17,6 +17,7 @@
     "exceljs": "^4.4.0",
     "express": "^5.2.1",
     "heic-convert": "^2.1.0",
+    "heic2any": "^0.0.4",
     "jszip": "^3.10.2",
     "lucide-react": "^1.53.0",
     "multer": "^2.4.0",
